@@ -370,4 +370,89 @@ class Chapter03Spec extends AnyFlatSpec with Checkpoints {
     assert(!hasSubsequence(List(1, 2, 3, 4, 4, 5, 5, 6, 7, 8), List(4, 5, 6)))
     c.reportAll()
   }
+
+  sealed trait Tree[+A]
+  final case class Leaf[A](value: A) extends Tree[A]
+  final case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
+
+  val tree = Branch(Leaf(1), Branch(Leaf(2), Branch(Leaf(5), Leaf(3))))
+
+  "[EX 3.25] implementation of the function size" should "work" in {
+    def size[A](t: Tree[A]): Int = t match {
+      case Leaf(_)             => 1
+      case Branch(left, right) => 1 + size(left) + size(right)
+    }
+
+    val c = new Checkpoint
+    assert(size(Leaf(2)) == 1)
+    assert(size(tree) == 7)
+    c.reportAll()
+  }
+
+  "[EX 3.26] implementation of the function maximum" should "work" in {
+    def maximum(t: Tree[Int]): Int = t match {
+      case Leaf(value)         => value
+      case Branch(left, right) => math.max(maximum(left), maximum(right))
+    }
+
+    val c = new Checkpoint
+    assert(maximum(Leaf(2)) == 2)
+    assert(maximum(tree) == 5)
+    c.reportAll()
+  }
+
+  "[EX 3.27] implementation of the function depth" should "work" in {
+    def depth[A](t: Tree[A]): Int = t match {
+      case Leaf(_)             => 1
+      case Branch(left, right) => 1 + math.max(depth(left), depth(right))
+    }
+
+    val c = new Checkpoint
+    assert(depth(Leaf(2)) == 1)
+    assert(depth(tree) == 4)
+    c.reportAll()
+  }
+
+  "[EX 3.28] implementation of the function map" should "work" in {
+    def map[A, B](t: Tree[A])(f: A => B): Tree[B] = t match {
+      case Leaf(value)         => Leaf(f(value))
+      case Branch(left, right) => Branch(map(left)(f), map(right)(f))
+    }
+
+    val expected = Branch(Leaf(2), Branch(Leaf(3), Branch(Leaf(6), Leaf(4))))
+
+    val c = new Checkpoint
+    assert(map(Leaf(2))(_ + 1) == Leaf(3))
+    assert(map(tree)(_ + 1) == expected)
+    c.reportAll()
+  }
+
+  "[EX 3.29] implementation of the functions size, maximum, depth and map using fold" should "work" in {
+    def fold[A, B](t: Tree[A])(f: A => B)(g: (B, B) => B): B = t match {
+      case Leaf(value)         => f(value)
+      case Branch(left, right) => g(fold(left)(f)(g), fold(right)(f)(g))
+    }
+
+    def size[A](t: Tree[A]): Int = fold(t)(_ => 1)(_ + _ + 1)
+    def maximum(t: Tree[Int]): Int = fold(t)(a => a)((a, b) => math.max(a, b))
+    def depth(t: Tree[Int]): Int = fold(t)(_ => 1)((a, b) => 1 + math.max(a, b))
+    def map[A, B](t: Tree[A])(f: A => B): Tree[B] =
+      fold(t)(a => Leaf(f(a)): Tree[B])((a, b) => Branch(a, b))
+
+    val expected = Branch(Leaf(2), Branch(Leaf(3), Branch(Leaf(6), Leaf(4))))
+
+    val c = new Checkpoint
+    assert(size(Leaf(2)) == 1)
+    assert(size(tree) == 7)
+
+    assert(maximum(Leaf(2)) == 2)
+    assert(maximum(tree) == 5)
+
+    assert(depth(Leaf(2)) == 1)
+    assert(depth(tree) == 4)
+
+    assert(map(Leaf(2))(_ + 1) == Leaf(3))
+    assert(map(tree)(_ + 1) == expected)
+    c.reportAll()
+  }
 }
