@@ -324,14 +324,12 @@ class Chapter03Spec extends AnyFlatSpec with Checkpoints {
     def zipWith[A](as: List[A], bs: List[A])(f: (A, A) => A): List[A] =
       (as, bs) match {
         case (Cons(h1, t1), Cons(h2, t2)) => Cons(f(h1, h2), zipWith(t1, t2)(f))
-        case (c, Nil)                     => c
-        case (Nil, c)                     => c
         case _                            => Nil
       }
 
     val c = new Checkpoint
     assert(zipWith(threeInts, threeInts)(_ + _) == List(2, 4, 6))
-    assert(zipWith(threeInts, List(4))(_ + _) == List(5, 2, 3))
+    assert(zipWith(threeInts, List(4))(_ + _) == List(5))
     c.reportAll()
   }
 
